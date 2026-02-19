@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import Intro from './pages/Intro';
 import Dashboard from './pages/Dashboard';
 import Workouts from './pages/Workouts';
@@ -19,9 +20,11 @@ import Notifications from './pages/Notifications';
 import WeeklyReport from './pages/WeeklyReport';
 import Settings from './pages/Settings';
 import Auth from './pages/Auth';
+import Onboarding from './pages/Onboarding';
 import MobileNav from './components/layout/MobileNav';
 import ZenithAIButton from './components/ui/ZenithAIButton';
 import CameraScanner from './components/ui/CameraScanner';
+import { NotificationProvider } from './components/ui/NotificationEngine';
 import { fitnessApi } from './api/axios';
 import { Home, Dumbbell, Utensils, Users, BarChart3, Settings as SettingsIcon, Scan, Activity, FileText, Camera, Calculator, Calendar } from 'lucide-react';
 
@@ -72,8 +75,10 @@ const AppLayout: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
             <DoubleDumbbellLogo className="w-6 h-6" />
           </div>
           <div className="flex flex-col">
-            <span className="font-black text-2xl tracking-tighter leading-none text-zinc-900 dark:text-white">ZenFit</span>
-            <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mt-1">SaaS Edition</span>
+            <span className="font-black text-2xl tracking-tighter leading-none text-zinc-900 dark:text-white">
+              <span className="text-purple-600">i</span>CTRL
+            </span>
+            <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mt-1">Biometric OS</span>
           </div>
         </div>
         
@@ -161,7 +166,7 @@ const AppLayout: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-3xl shadow-xl transition-transform group-hover:scale-105">
                   <Scan className="w-8 h-8" strokeWidth={3} />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">AI Food Scan</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">iCtrl Food Scan</span>
               </button>
               <button onClick={() => { setIsQuickAddOpen(false); navigate('/food'); }} className="flex flex-col items-center gap-4 p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all group">
                 <div className="w-14 h-14 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-2xl flex items-center justify-center text-2xl shadow-lg transition-transform group-hover:scale-110 group-hover:rotate-6">🥗</div>
@@ -179,7 +184,7 @@ const AppLayout: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       {/* Global Scanner Modal */}
       {isScannerOpen && (
         <CameraScanner 
-          title="AI Macro Analysis"
+          title="iCtrl Macro Analysis"
           subtitle="Scan meal to identify nutrient parameters."
           onClose={() => setIsScannerOpen(false)}
           onCapture={async (base64) => {
@@ -194,6 +199,9 @@ const AppLayout: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
 
 const App: React.FC = () => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('zenfit_token'));
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(
+    localStorage.getItem('zenfit_onboarding_complete') === 'true'
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -217,14 +225,47 @@ const App: React.FC = () => {
     setToken(null);
   };
 
-  if (!token) {
-    return <Auth onLogin={handleLogin} />;
-  }
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('zenfit_onboarding_complete', 'true');
+    setOnboardingCompleted(true);
+  };
 
   return (
-    <Router>
-      <AppLayout onLogout={handleLogout} />
-    </Router>
+    <NotificationProvider>
+      <AnimatePresence mode="wait">
+        {!onboardingCompleted ? (
+          <motion.div
+            key="onboarding"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ x: '-100%', opacity: 0 }}
+            transition={{ duration: 0.5, ease: 'easeInOut' }}
+          >
+            <Onboarding onComplete={handleOnboardingComplete} />
+          </motion.div>
+        ) : !token ? (
+          <motion.div
+            key="auth"
+            initial={{ x: '100%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+          >
+            <Auth onLogin={handleLogin} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="app"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="h-full"
+          >
+            <Router>
+              <AppLayout onLogout={handleLogout} />
+            </Router>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </NotificationProvider>
   );
 };
 

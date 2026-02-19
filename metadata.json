@@ -1,6 +1,6 @@
 {
-  "name": "ZenFit - Modern Fitness SaaS",
-  "description": "A premium, mobile-first fitness tracking application featuring real-time dashboard analytics, workout logging, and AI-powered performance insights using a minimalist Stripe-inspired design.",
+  "name": "iCtrl - Premium Fitness OS",
+  "description": "A high-performance biometric control system for elite athletes. Track, analyze, and optimize human potential with iCtrl.",
   "requestFramePermissions": [
     "camera"
   ]

@@ -1,28 +1,14 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { authApi } from '../api/axios';
-import Card from '../components/ui/Card';
-import Input from '../components/ui/Input';
-import Button from '../components/ui/Button';
 import { AuthView } from '../types';
+import { Eye, EyeOff, Facebook, Mail, Lock, User, ShieldCheck, ChevronRight } from 'lucide-react';
+import Button from '../components/ui/Button';
 
 interface AuthProps {
   onLogin: (token: string) => void;
 }
-
-const DoubleDumbbellLogo = ({ className = "w-10 h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    {/* Left Dumbbell */}
-    <rect x="3" y="5" width="4" height="14" rx="2" fill="currentColor" />
-    <rect x="1" y="7" width="8" height="3" rx="1.5" fill="currentColor" fillOpacity="0.9" />
-    <rect x="1" y="14" width="8" height="3" rx="1.5" fill="currentColor" fillOpacity="0.9" />
-    
-    {/* Right Dumbbell - Offset for a modern, asymmetrical look */}
-    <rect x="17" y="5" width="4" height="14" rx="2" fill="currentColor" />
-    <rect x="15" y="7" width="8" height="3" rx="1.5" fill="currentColor" fillOpacity="0.9" />
-    <rect x="15" y="14" width="8" height="3" rx="1.5" fill="currentColor" fillOpacity="0.9" />
-  </svg>
-);
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -35,9 +21,16 @@ const GoogleIcon = () => (
 
 const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [view, setView] = useState<AuthView>(AuthView.LOGIN);
-  const [formData, setFormData] = useState({ email: '', password: '', name: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '', name: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gender, setGender] = useState<string>('Female');
+
+  useEffect(() => {
+    const savedGender = localStorage.getItem('zenfit_onboarding_gender');
+    if (savedGender) setGender(savedGender);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +41,9 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       if (view === AuthView.LOGIN) {
         response = await authApi.login({ email: formData.email, password: formData.password });
       } else {
+        if (formData.password !== formData.confirmPassword) {
+          throw new Error("Passwords do not match.");
+        }
         response = await authApi.signup(formData);
       }
       
@@ -56,140 +52,212 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         onLogin(response.data.token);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Authentication failed. Please try again.');
+      setError(err.message || err.response?.data?.message || 'Authentication failed.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = () => {
-    authApi.googleLogin();
-  };
-
-  const handleDemoLogin = () => {
-    const demoToken = 'demo_mode_active_' + Date.now();
-    localStorage.setItem('zenfit_token', demoToken);
-    onLogin(demoToken);
-  };
+  const athleteImage = gender === 'Male' 
+    ? "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=1200"
+    : "https://images.unsplash.com/photo-1594381898411-846e7d193883?auto=format&fit=crop&q=80&w=1200";
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-zinc-50">
-      <div className="w-full max-w-sm space-y-8 animate-in fade-in duration-700">
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-zinc-900 rounded-[28px] shadow-2xl shadow-zinc-400/30 transform transition-all duration-500 hover:scale-105 hover:-rotate-3 group">
-            <DoubleDumbbellLogo className="w-11 h-11 text-white" />
-          </div>
-          <h2 className="text-4xl font-black tracking-tighter text-zinc-900 mt-6">
-            ZenFit
-          </h2>
-          <p className="text-zinc-400 text-sm font-semibold tracking-wide uppercase">
-            Designed for Performance
-          </p>
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-4 md:p-8 overflow-hidden relative">
+      {/* Animated background gradient */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(168,85,247,0.05),transparent_70%)]" />
+        <motion.div 
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 10, repeat: Infinity }}
+          className="absolute -top-[20%] -right-[10%] w-[60%] h-[60%] bg-purple-500/10 rounded-full blur-[120px]"
+        />
+      </div>
+
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-6xl bg-white dark:bg-zinc-900 rounded-[40px] shadow-[0_32px_80px_-16px_rgba(0,0,0,0.1)] dark:shadow-none border border-zinc-100 dark:border-white/5 flex flex-col md:flex-row overflow-hidden relative z-10"
+      >
+        {/* Left Side: Form */}
+        <div className="flex-1 p-8 md:p-16 flex flex-col justify-center">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={view}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-10"
+            >
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full text-[9px] font-black uppercase tracking-widest mb-2">
+                  <ShieldCheck className="w-3 h-3" /> iCtrl Node Protocol
+                </div>
+                <h2 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white italic">
+                  {view === AuthView.LOGIN ? 'Synchronize Session' : 'Register Biometrics'}
+                </h2>
+                <p className="text-zinc-400 dark:text-zinc-500 text-xs font-bold uppercase tracking-widest">
+                  Let's start your wonderful journey with iCtrl
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-6 max-w-md">
+                {view === AuthView.SIGNUP && (
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Identity Label</label>
+                    <div className="relative group">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-300 group-focus-within:text-purple-500 transition-colors" />
+                      <input 
+                        type="text"
+                        placeholder="Marcus Aurelius"
+                        value={formData.name}
+                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        className="w-full bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/5 rounded-2xl pl-12 pr-5 py-4 outline-none focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 transition-all font-bold text-sm text-zinc-900 dark:text-white shadow-inner"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Email Node</label>
+                  <div className="relative group">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-300 group-focus-within:text-purple-500 transition-colors" />
+                    <input 
+                      type="email"
+                      placeholder="alex@ictrl.os"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="w-full bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/5 rounded-2xl pl-12 pr-5 py-4 outline-none focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 transition-all font-bold text-sm text-zinc-900 dark:text-white shadow-inner"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Access Token</label>
+                  <div className="relative group">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-300 group-focus-within:text-purple-500 transition-colors" />
+                    <input 
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      className="w-full bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/5 rounded-2xl pl-12 pr-12 py-4 outline-none focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 transition-all font-bold text-sm text-zinc-900 dark:text-white shadow-inner"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-300 hover:text-zinc-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {view === AuthView.LOGIN && (
+                    <button type="button" className="text-[10px] font-black text-purple-500 uppercase tracking-widest hover:underline mt-2 ml-1">Recover Security Key?</button>
+                  )}
+                </div>
+
+                {view === AuthView.SIGNUP && (
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Confirm Access Token</label>
+                    <input 
+                      type="password"
+                      placeholder="••••••••"
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                      className="w-full bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/5 rounded-2xl px-5 py-4 outline-none focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 transition-all font-bold text-sm text-zinc-900 dark:text-white shadow-inner"
+                    />
+                    <div className="flex items-center gap-3 pt-3">
+                       <input type="checkbox" className="w-4 h-4 rounded-md border-zinc-200 text-purple-600 focus:ring-purple-500" required />
+                       <span className="text-[10px] font-bold text-zinc-400">By signing up, you accept the <a href="#" className="text-purple-500 underline">iCtrl Protocols</a></span>
+                    </div>
+                  </div>
+                )}
+
+                {error && <p className="text-[10px] font-black text-red-500 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-xl border border-red-100 dark:border-red-900/30 uppercase tracking-widest">{error}</p>}
+
+                <Button 
+                  loading={loading}
+                  fullWidth 
+                  className="h-16 rounded-[20px] bg-gradient-to-r from-purple-600 to-pink-500 text-white font-black uppercase tracking-[0.3em] text-xs shadow-xl shadow-purple-500/30 active:scale-95 transition-all group"
+                >
+                  <span className="flex items-center gap-2">
+                    {view === AuthView.LOGIN ? 'Proceed to System' : 'Initialize iCtrl Account'}
+                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </Button>
+              </form>
+
+              <div className="space-y-8">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-100 dark:border-white/5"></span></div>
+                  <div className="relative flex justify-center text-[9px] font-black uppercase tracking-[0.4em] text-zinc-400"><span className="bg-white dark:bg-zinc-900 px-4">OR CONTINUE WITH</span></div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 max-w-md">
+                  <button className="flex items-center justify-center gap-3 h-14 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/5 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all group shadow-sm active:scale-95">
+                    <GoogleIcon />
+                    <span className="text-[10px] font-black text-zinc-600 dark:text-zinc-300 uppercase tracking-widest">Google</span>
+                  </button>
+                  <button className="flex items-center justify-center gap-3 h-14 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/5 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all group shadow-sm active:scale-95">
+                    <Facebook className="w-5 h-5 text-[#1877F2] fill-[#1877F2]" />
+                    <span className="text-[10px] font-black text-zinc-600 dark:text-zinc-300 uppercase tracking-widest">Facebook</span>
+                  </button>
+                </div>
+
+                <div className="text-center pt-4">
+                  <button 
+                    onClick={() => setView(view === AuthView.LOGIN ? AuthView.SIGNUP : AuthView.LOGIN)}
+                    className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest hover:text-purple-600 transition-colors"
+                  >
+                    {view === AuthView.LOGIN ? "Don't have an iCtrl ID? " : "Already have an iCtrl ID? "}
+                    <span className="text-purple-600 dark:text-purple-400 font-black underline underline-offset-4">{view === AuthView.LOGIN ? 'SIGN UP' : 'LOG IN'}</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
-        <Card className="p-1 pb-8 overflow-hidden border-zinc-200/50 shadow-2xl shadow-zinc-200/50">
-          {/* Tab Switcher */}
-          <div className="p-1 mb-6">
-            <div className="relative flex bg-zinc-100 rounded-[20px] p-1">
-              <div 
-                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-[16px] shadow-sm transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${
-                  view === AuthView.SIGNUP ? 'translate-x-[calc(100%+4px)]' : 'translate-x-0'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setView(AuthView.LOGIN)}
-                className={`relative z-10 flex-1 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors duration-300 ${
-                  view === AuthView.LOGIN ? 'text-zinc-900' : 'text-zinc-400'
-                }`}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => setView(AuthView.SIGNUP)}
-                className={`relative z-10 flex-1 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors duration-300 ${
-                  view === AuthView.SIGNUP ? 'text-zinc-900' : 'text-zinc-400'
-                }`}
-              >
-                Join Now
-              </button>
-            </div>
+        {/* Right Side: Visual Image */}
+        <div className="hidden md:block w-[45%] relative overflow-hidden group">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={athleteImage}
+              initial={{ opacity: 0, scale: 1.1 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              transition={{ duration: 1.2 }}
+              className="absolute inset-0"
+            >
+              <img src={athleteImage} className="w-full h-full object-cover transition-transform duration-[5s] group-hover:scale-110" alt="iCtrl Pro" />
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-900/60 via-purple-600/30 to-pink-500/40 mix-blend-overlay" />
+              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-purple-950/20" />
+            </motion.div>
+          </AnimatePresence>
+          
+          <div className="absolute inset-0 p-12 flex flex-col justify-end text-white">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="space-y-4"
+            >
+              <div className="w-12 h-1 bg-white/50 rounded-full" />
+              <h3 className="text-5xl font-black tracking-tighter uppercase italic leading-none">
+                {gender === 'Male' ? 'TOTAL' : 'ELITE'}<br />
+                <span className="text-purple-400">CONTROL</span>
+              </h3>
+              <p className="text-sm font-bold text-zinc-300 uppercase tracking-[0.4em] leading-relaxed">
+                Join 50,000+ athletes optimizing their human potential through the iCtrl protocol.
+              </p>
+            </motion.div>
           </div>
+        </div>
+      </motion.div>
 
-          <div className="px-8">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className={`overflow-hidden transition-all duration-500 ${view === AuthView.SIGNUP ? 'max-h-24 opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
-                <Input 
-                  label="Full Name" 
-                  placeholder="e.g. Marcus Aurelius"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required={view === AuthView.SIGNUP}
-                />
-              </div>
-              <Input 
-                label="Email Address" 
-                type="email" 
-                placeholder="marcus@zenfit.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-              <Input 
-                label="Security Key" 
-                type="password" 
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-              />
-              
-              {error && <p className="text-[10px] font-bold text-red-500 text-center uppercase tracking-widest bg-red-50 py-2.5 rounded-xl border border-red-100">{error}</p>}
-
-              <Button fullWidth loading={loading} className="mt-4 h-14 text-sm uppercase tracking-[0.2em] font-black shadow-xl shadow-zinc-900/10 active:scale-95 transition-transform">
-                {loading ? 'Processing...' : (view === AuthView.LOGIN ? 'Proceed' : 'Create Access')}
-              </Button>
-            </form>
-
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-zinc-100"></span>
-              </div>
-              <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em]">
-                <span className="bg-white px-3 text-zinc-400 font-bold">Secure Connect</span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <Button 
-                variant="secondary" 
-                fullWidth 
-                onClick={handleGoogleLogin}
-                className="border-zinc-200 h-14 group hover:border-zinc-400 transition-colors"
-              >
-                <GoogleIcon />
-                <span className="text-xs font-bold uppercase tracking-widest group-hover:text-zinc-900">Sign in with Google</span>
-              </Button>
-
-              <Button 
-                variant="ghost" 
-                fullWidth 
-                onClick={handleDemoLogin}
-                className="h-10 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 hover:text-zinc-900"
-              >
-                Try Demo Access
-              </Button>
-            </div>
-          </div>
-        </Card>
-
-        <p className="text-center text-[10px] text-zinc-400 font-bold uppercase tracking-widest leading-relaxed">
-          Proprietary Performance Monitoring System<br />
-          <a href="#" className="text-zinc-900 hover:underline">Terms</a>
-          <span className="mx-2 text-zinc-200">•</span>
-          <a href="#" className="text-zinc-900 hover:underline">Privacy</a>
-        </p>
+      <div className="absolute bottom-8 text-center w-full pointer-events-none opacity-20">
+        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[1em]">iCtrl Biometric OS • v4.2.5</p>
       </div>
     </div>
   );

@@ -4,6 +4,10 @@ export interface User {
   name: string;
   email: string;
   avatar?: string;
+  level: number;
+  xp: number;
+  xpToNextLevel: number;
+  streakStatus: 'stable' | 'warning' | 'critical';
 }
 
 export interface GPSPoint {
@@ -60,6 +64,8 @@ export interface Workout {
     strengthScore?: string;
     distance?: string;
     avgPace?: string;
+    xpEarned?: number;
+    intensityScore?: number;
   };
 }
 
@@ -71,7 +77,7 @@ export interface Notification {
   timestamp: string;
   read: boolean;
   priority: 'low' | 'medium' | 'high';
-  path: string; // New: target path for redirection
+  path: string;
 }
 
 export interface FoodItem {
@@ -142,6 +148,8 @@ export interface Badge {
   unlocked: boolean;
   progress?: number;
   target?: number;
+  dateUnlocked?: string;
+  rarity: 'common' | 'rare' | 'elite' | 'mythic';
 }
 
 export interface AchievementStats {
@@ -151,13 +159,17 @@ export interface AchievementStats {
   rank: string;
   nextRank: string;
   rankProgress: number;
+  level: number;
+  totalXP: number;
 }
 
 export interface DailyStats {
   burned: number;
-  goal: number;
-  steps: number;
-  water: number;
+  burnedGoal: number;
+  workouts: number;
+  workoutsGoal: number;
+  activeMinutes: number;
+  activeMinutesGoal: number;
 }
 
 export interface PersonalRecord {

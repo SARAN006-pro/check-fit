@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ZenFit | High-Performance Energy</title>
+  <title>iCtrl | High-Performance Biometric OS</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -17,9 +17,17 @@
               orange: '#ea580c',
               green: '#39ff14',
               gold: '#facc15',
-              charcoal: '#121212',
-              panel: '#1e1e1e',
+              charcoal: '#09090b',
+              surface: {
+                light: '#ffffff',
+                dark: '#18181b'
+              }
             }
+          },
+          boxShadow: {
+            'premium': '0 20px 50px -12px rgba(0, 0, 0, 0.08)',
+            'glow-red': '0 0 30px rgba(225, 29, 72, 0.2)',
+            'glow-green': '0 0 30px rgba(57, 255, 20, 0.2)',
           },
           animation: {
             'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -55,20 +63,37 @@
       font-family: 'Inter', sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
-      background-color: #0a0a0a;
-      color: #f4f4f5;
+      transition: background-color 0.4s ease, color 0.4s ease;
     }
+    
+    :root {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #f1f5f9;
+      --text-primary: #09090b;
+      --text-muted: #64748b;
+    }
+
+    .dark {
+      --bg-primary: #09090b;
+      --bg-secondary: #121212;
+      --text-primary: #f4f4f5;
+      --text-muted: #a1a1aa;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+    }
+
     .glass {
-      background: rgba(18, 18, 18, 0.8);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
-    .red-glow {
-      box-shadow: 0 0 20px rgba(225, 29, 72, 0.3);
+    .dark .glass {
+      background: rgba(24, 24, 27, 0.7);
     }
-    .green-glow {
-      box-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
-    }
+
     ::-webkit-scrollbar {
       width: 6px;
     }
@@ -79,9 +104,19 @@
       background: #3f3f46;
       border-radius: 10px;
     }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
     @keyframes slide-up {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
   </style>
 <script type="importmap">
@@ -100,7 +135,7 @@
 }
 </script>
 </head>
-<body class="dark bg-black text-zinc-100">
+<body class="dark overflow-x-hidden">
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

@@ -6,6 +6,7 @@ import { fitnessApi } from '../api/axios';
 import Header from '../components/layout/Header';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import { useNotification } from '../components/ui/NotificationEngine';
 import { 
   Activity, Flame, Heart, Zap, Timer, Plus, Trash2, 
   ChevronRight, TrendingUp, Play, Square, CheckCircle2, 
@@ -19,20 +20,10 @@ import { Workout, PersonalRecord } from '../types';
 const MotionDiv = motion.div as any;
 const MotionButton = motion.button as any;
 
-// 1. PERFORMANCE LIBRARY
 const EXERCISE_LIBRARY = [
   { id: 'ex1', name: 'Barbell Bench Press', muscle: 'Chest', difficulty: 'Expert', met: 6.0, icon: '🏋️' },
-  { id: 'ex2', name: 'Incline Dumbbell Press', muscle: 'Chest', difficulty: 'Advanced', met: 5.5, icon: '💪' },
-  { id: 'ex3', name: 'Pull Ups', muscle: 'Back', difficulty: 'Expert', met: 7.0, icon: '🧗' },
-  { id: 'ex4', name: 'Seated Cable Row', muscle: 'Back', difficulty: 'Intermediate', met: 4.5, icon: '⛓️' },
   { id: 'ex5', name: 'Back Squat', muscle: 'Legs', difficulty: 'Expert', met: 8.5, icon: '🦵' },
-  { id: 'ex6', name: 'Leg Extensions', muscle: 'Legs', difficulty: 'Beginner', met: 3.5, icon: '🦶' },
-  { id: 'ex7', name: 'Military Press', muscle: 'Shoulders', difficulty: 'Expert', met: 6.5, icon: '⬆️' },
   { id: 'ex8', name: 'Deadlift', muscle: 'Back', difficulty: 'Expert', met: 9.0, icon: '💀' },
-  { id: 'ex9', name: 'Bicep Curls', muscle: 'Arms', difficulty: 'Beginner', met: 3.0, icon: '💪' },
-  { id: 'ex10', name: 'Tricep Pushdowns', muscle: 'Arms', difficulty: 'Beginner', met: 3.0, icon: '⬇️' },
-  { id: 'ex11', name: 'Plank', muscle: 'Core', difficulty: 'Beginner', met: 4.0, icon: '🧘' },
-  { id: 'ex12', name: 'Hanging Leg Raises', muscle: 'Core', difficulty: 'Advanced', met: 5.0, icon: '⚓' },
 ];
 
 const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'];
@@ -54,8 +45,8 @@ interface ActiveProtocol {
 
 const Workouts: React.FC = () => {
   const navigate = useNavigate();
+  const { notify } = useNotification();
   
-  // States: 'IDLE' | 'SELECTING' | 'ACTIVE' | 'RESTING' | 'SUMMARY'
   const [viewState, setViewState] = useState<'IDLE' | 'SELECTING' | 'ACTIVE' | 'RESTING' | 'SUMMARY'>('IDLE');
   const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
   const [activeSession, setActiveSession] = useState<ActiveProtocol[]>([]);
@@ -89,7 +80,6 @@ const Workouts: React.FC = () => {
     fetchData();
   }, []);
 
-  // SESSION CLOCK
   useEffect(() => {
     if (viewState === 'ACTIVE' || viewState === 'RESTING') {
       timerRef.current = window.setInterval(() => setElapsedSeconds(p => p + 1), 1000);
@@ -99,7 +89,6 @@ const Workouts: React.FC = () => {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [viewState]);
 
-  // REST CLOCK
   useEffect(() => {
     if (viewState === 'RESTING' && restTimeLeft > 0) {
       restTimerRef.current = window.setInterval(() => setRestTimeLeft(p => p - 1), 1000);
@@ -110,11 +99,10 @@ const Workouts: React.FC = () => {
   }, [viewState, restTimeLeft]);
 
   const totalKcal = useMemo(() => {
-    let burn = (elapsedSeconds / 60) * 5; // Base burn
+    let burn = (elapsedSeconds / 60) * 5; 
     activeSession.forEach(ex => {
       ex.sets.forEach(set => {
         if (set.completed) {
-          // Simplified metabolic calculation
           burn += (set.reps * set.weight * 0.01) + (ex.met * 2);
         }
       });
@@ -132,6 +120,7 @@ const Workouts: React.FC = () => {
     setViewState('SELECTING');
     setElapsedSeconds(0);
     setActiveSession([]);
+    notify({ type: 'success', title: 'Protocol Initialized', message: 'Combat readiness sensors active.' });
   };
 
   const addExerciseToSession = (ex: typeof EXERCISE_LIBRARY[0]) => {
@@ -152,32 +141,22 @@ const Workouts: React.FC = () => {
     (newSession[exIdx].sets[setIdx] as any)[field] = value;
     setActiveSession(newSession);
 
-    // Check PR
     if (field === 'completed' && value === true) {
       const set = newSession[exIdx].sets[setIdx];
       const existingPR = prs.find(p => p.exercise === newSession[exIdx].name);
       if (existingPR && set.weight > existingPR.value) {
         setSessionPRs(p => [...p, newSession[exIdx].name]);
+        notify({ 
+          type: 'impact', 
+          title: 'PR DEVIATION DETECTED', 
+          message: `New absolute peak on ${newSession[exIdx].name}: ${set.weight}kg`,
+          progress: 100
+        });
       }
-      // Auto-trigger rest
       setRestTimeLeft(restTime);
       setViewState('RESTING');
     }
   };
-
-  const addSet = (exIdx: number) => {
-    const newSession = [...activeSession];
-    const lastSet = newSession[exIdx].sets[newSession[exIdx].sets.length - 1];
-    newSession[exIdx].sets.push({ 
-      id: Math.random().toString(), 
-      weight: lastSet?.weight || 0, 
-      reps: lastSet?.reps || 0, 
-      completed: false 
-    });
-    setActiveSession(newSession);
-  };
-
-  const formatTime = (s: number) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2, '0')}`;
 
   const finishSession = async () => {
     setLoading(true);
@@ -189,9 +168,18 @@ const Workouts: React.FC = () => {
         calories: totalKcal,
         timestamp: new Date().toISOString()
       });
+      
+      notify({ 
+        type: 'achievement', 
+        title: 'PROTOCOL VERIFIED', 
+        message: `You dominated today's sequence. Total tonnage shifted: ${totalVolume.toLocaleString()}kg.`,
+        xp: 450
+      });
+
       setViewState('SUMMARY');
     } catch (err) {
       console.error(err);
+      notify({ type: 'warning', title: 'Sync Failure', message: 'Neural link degraded. Data saved locally.' });
     } finally {
       setLoading(false);
     }
@@ -202,16 +190,15 @@ const Workouts: React.FC = () => {
   return (
     <div className="min-h-screen bg-black text-zinc-100 p-6 pb-40 max-w-2xl mx-auto space-y-12 overflow-x-hidden relative">
       
-      {/* 2. STATE: IDLE (Session Dashboard) */}
       {viewState === 'IDLE' && (
         <div className="space-y-10 animate-in fade-in duration-700">
           <Header title="Force Matrix" subtitle="Operational Readiness Hub" />
           
           <Card className="p-10 border-none bg-gradient-to-br from-brand-red/20 to-black text-white shadow-3xl relative overflow-hidden group">
-            <div className="relative z-10 flex items-center justify-between">
+            <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-8">
               <div className="space-y-4">
                 <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.5em]">Weekly Burn</p>
-                <h2 className="text-7xl font-black tracking-tighter tabular-nums drop-shadow-2xl">4,280</h2>
+                <h2 className="text-7xl font-black tracking-tighter tabular-nums drop-shadow-2xl leading-none">4,280</h2>
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-brand-green" />
                   <span className="text-[11px] font-black text-brand-green uppercase">+12.4% vs Avg</span>
@@ -219,9 +206,15 @@ const Workouts: React.FC = () => {
               </div>
               <button 
                 onClick={handleStartSession}
-                className="w-24 h-24 bg-brand-red rounded-[32px] flex items-center justify-center shadow-[0_20px_50px_rgba(225,29,72,0.4)] hover:scale-105 active:scale-95 transition-all group"
+                className="h-24 px-8 bg-gradient-to-br from-brand-red to-orange-600 rounded-[32px] flex items-center gap-4 shadow-[0_20px_50px_rgba(225,29,72,0.4)] hover:scale-105 active:scale-95 transition-all group border border-white/10"
               >
-                <Play className="w-10 h-10 text-white fill-current group-hover:rotate-12 transition-transform" />
+                <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform shadow-inner">
+                  <Dumbbell className="w-6 h-6 text-white" strokeWidth={3} />
+                </div>
+                <div className="text-left">
+                  <p className="text-[10px] font-black text-red-100 uppercase tracking-[0.2em] leading-none mb-1">Begin</p>
+                  <p className="text-lg font-black text-white uppercase tracking-widest italic">Protocol</p>
+                </div>
               </button>
             </div>
             <div className="absolute top-0 right-0 w-64 h-64 bg-brand-red/10 rounded-full blur-[100px] -mr-32 -mt-32" />
@@ -252,11 +245,10 @@ const Workouts: React.FC = () => {
         </div>
       )}
 
-      {/* 3. STATE: SELECTING (Muscle Selection) */}
       {viewState === 'SELECTING' && (
         <div className="space-y-10 animate-in slide-in-from-right-8 duration-500">
           <div className="flex items-center gap-4">
-             <button onClick={() => setViewState('IDLE')} className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center"><ChevronLeft /></button>
+             <button onClick={() => setViewState('IDLE')} className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400"><ChevronLeft /></button>
              <h2 className="text-3xl font-black uppercase tracking-tighter italic">Select Vector</h2>
           </div>
 
@@ -282,7 +274,7 @@ const Workouts: React.FC = () => {
               >
                 <h3 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] ml-2">{selectedMuscle} Protocols</h3>
                 <div className="grid grid-cols-1 gap-4">
-                  {EXERCISE_LIBRARY.filter(e => e.muscle === selectedMuscle).map(ex => (
+                  {EXERCISE_LIBRARY.map(ex => (
                     <Card key={ex.id} onClick={() => addExerciseToSession(ex)} className="p-6 flex items-center justify-between group">
                       <div className="flex items-center gap-6">
                         <div className="w-14 h-14 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-brand-red group-hover:border-transparent transition-all">
@@ -290,12 +282,7 @@ const Workouts: React.FC = () => {
                         </div>
                         <div>
                           <h4 className="text-lg font-black uppercase italic tracking-tight">{ex.name}</h4>
-                          <div className="flex items-center gap-3 mt-1">
-                            <span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase ${ex.difficulty === 'Expert' ? 'bg-red-900/30 text-red-500' : 'bg-zinc-800 text-zinc-500'}`}>
-                              {ex.difficulty}
-                            </span>
-                            <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">Est. {Math.round(ex.met * 12)} kcal/set</span>
-                          </div>
+                          <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">Target: {ex.muscle}</span>
                         </div>
                       </div>
                       <Plus className="text-zinc-700 group-hover:text-brand-red" />
@@ -308,7 +295,6 @@ const Workouts: React.FC = () => {
         </div>
       )}
 
-      {/* 4. STATE: ACTIVE (The Lifting Zone) */}
       {(viewState === 'ACTIVE' || viewState === 'RESTING') && (
         <div className="space-y-8 animate-in zoom-in duration-500 min-h-[60vh] flex flex-col">
           <div className="flex items-center justify-between sticky top-0 bg-black/80 backdrop-blur-md py-4 z-30 -mx-6 px-6 border-b border-white/5">
@@ -323,7 +309,7 @@ const Workouts: React.FC = () => {
              </div>
              <div className="text-right">
                 <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Protocol Clock</p>
-                <p className="text-xl font-black tabular-nums text-white">{formatTime(elapsedSeconds)}</p>
+                <p className="text-xl font-black tabular-nums text-white">{elapsedSeconds}S</p>
              </div>
           </div>
 
@@ -342,26 +328,20 @@ const Workouts: React.FC = () => {
                              {sIdx + 1}
                           </div>
                           <div className="flex-1 grid grid-cols-2 gap-4">
-                             <div className="space-y-1">
-                                <p className="text-[8px] font-black text-zinc-600 uppercase">Resistance (kg)</p>
-                                <input 
-                                  type="number" 
-                                  value={set.weight || ''} 
-                                  placeholder="00"
-                                  onChange={(e) => updateSet(currentExerciseIdx, sIdx, 'weight', parseFloat(e.target.value))}
-                                  className="w-full bg-transparent border-none text-2xl font-black text-white focus:outline-none placeholder:text-zinc-800"
-                                />
-                             </div>
-                             <div className="space-y-1">
-                                <p className="text-[8px] font-black text-zinc-600 uppercase">Rep Volume</p>
-                                <input 
-                                  type="number" 
-                                  value={set.reps || ''} 
-                                  placeholder="00"
-                                  onChange={(e) => updateSet(currentExerciseIdx, sIdx, 'reps', parseInt(e.target.value))}
-                                  className="w-full bg-transparent border-none text-2xl font-black text-white focus:outline-none placeholder:text-zinc-800"
-                                />
-                             </div>
+                             <input 
+                              type="number" 
+                              value={set.weight || ''} 
+                              placeholder="Weight (kg)"
+                              onChange={(e) => updateSet(currentExerciseIdx, sIdx, 'weight', parseFloat(e.target.value))}
+                              className="bg-transparent border-none text-xl font-black text-white outline-none"
+                            />
+                             <input 
+                              type="number" 
+                              value={set.reps || ''} 
+                              placeholder="Reps"
+                              onChange={(e) => updateSet(currentExerciseIdx, sIdx, 'reps', parseInt(e.target.value))}
+                              className="bg-transparent border-none text-xl font-black text-white outline-none"
+                            />
                           </div>
                           <MotionButton 
                             whileTap={{ scale: 0.8 }}
@@ -374,25 +354,20 @@ const Workouts: React.FC = () => {
                     </Card>
                   ))}
                </div>
-
-               <Button fullWidth variant="secondary" onClick={() => addSet(currentExerciseIdx)} className="h-16 rounded-[28px] border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white mb-20">
-                  <Plus className="w-5 h-5" /> APPEND SET SEQUENCE
-               </Button>
             </MotionDiv>
           )}
 
-          {/* Corrected Persistent Action Bar - Sticky to respect content column and sidebar */}
           <div className="sticky bottom-8 left-0 right-0 flex gap-4 z-40 bg-black/60 backdrop-blur-md p-2 rounded-[32px] border border-white/5 shadow-2xl mt-auto">
              <Button 
                 variant="secondary" 
                 onClick={() => setViewState('SELECTING')} 
-                className="flex-1 h-16 rounded-[28px] bg-zinc-800 text-zinc-100 border-zinc-700 hover:bg-zinc-700 font-black"
+                className="flex-1 h-16 rounded-[28px] font-black"
              >
                 NEW VECTOR
              </Button>
              <Button 
                 onClick={finishSession} 
-                className="flex-[2] h-16 rounded-[28px] bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-xl shadow-red-900/20 font-black"
+                className="flex-[2] h-16 rounded-[28px] bg-gradient-to-r from-red-600 to-orange-600 font-black"
              >
                 TERMINATE PROTOCOL
              </Button>
@@ -400,120 +375,18 @@ const Workouts: React.FC = () => {
         </div>
       )}
 
-      {/* 5. STATE: RESTING (Recovery Interface) */}
-      <AnimatePresence>
-        {viewState === 'RESTING' && (
-          <MotionDiv 
-            initial={{ opacity: 0, scale: 1.1 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 z-[60] bg-brand-red flex flex-col items-center justify-center p-10 text-white"
-          >
-            <div className="absolute top-10 flex items-center gap-2">
-               <Heart className="w-5 h-5 animate-heartbeat" />
-               <span className="text-[10px] font-black uppercase tracking-[0.4em]">Recovery Phase Active</span>
-            </div>
-
-            <div className="relative w-72 h-72 flex items-center justify-center mb-12">
-               <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="48" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="4" />
-                  <circle 
-                    cx="50" cy="50" r="48" fill="none" stroke="white" strokeWidth="4" 
-                    strokeDasharray="301.6" strokeDashoffset={301.6 * (1 - restTimeLeft / restTime)}
-                    strokeLinecap="round"
-                    className="transition-all duration-1000 linear"
-                  />
-               </svg>
-               <h2 className="text-9xl font-black tracking-tighter tabular-nums drop-shadow-2xl">
-                 {restTimeLeft}
-               </h2>
-            </div>
-
-            <div className="text-center space-y-6">
-               <div className="space-y-1">
-                  <h3 className="text-2xl font-black uppercase italic tracking-widest">Next Target</h3>
-                  <p className="text-sm font-bold opacity-60 uppercase">{activeSession[currentExerciseIdx]?.name}</p>
-               </div>
-               <div className="flex gap-4">
-                  <button onClick={() => setRestTimeLeft(0)} className="px-10 py-5 bg-white text-brand-red rounded-full font-black uppercase tracking-widest text-xs shadow-2xl active:scale-95 transition-all">
-                    Skip Rest
-                  </button>
-                  <button onClick={() => setRestTimeLeft(p => p + 30)} className="px-10 py-5 bg-black/20 border border-white/20 text-white rounded-full font-black uppercase tracking-widest text-xs active:scale-95 transition-all">
-                    +30S
-                  </button>
-               </div>
-            </div>
-          </MotionDiv>
-        )}
-      </AnimatePresence>
-
-      {/* 6. STATE: SUMMARY (Post-Workout Analytics) */}
       {viewState === 'SUMMARY' && (
-        <div className="space-y-10 animate-in fade-in duration-1000">
-          <div className="text-center space-y-4">
-             <div className="w-24 h-24 bg-brand-gold/10 rounded-[40px] border border-brand-gold/20 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(250,204,21,0.1)]">
-                <Trophy className="w-12 h-12 text-brand-gold animate-bounce" />
-             </div>
-             <h2 className="text-5xl font-black tracking-tighter italic uppercase text-white">Execution Verified</h2>
-             <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.4em]">Protocol Node 0xFF9 Logged</p>
+        <div className="space-y-10 animate-in fade-in duration-1000 text-center">
+          <div className="w-24 h-24 bg-brand-gold/10 rounded-[40px] border border-brand-gold/20 flex items-center justify-center mx-auto shadow-3xl">
+             <Trophy className="w-12 h-12 text-brand-gold" />
           </div>
-
-          <div className="grid grid-cols-2 gap-6">
-             <Card className="p-8 border-none bg-zinc-900 text-center space-y-2 group overflow-hidden relative">
-                <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest relative z-10">Energy Expenditure</p>
-                <p className="text-5xl font-black text-brand-green tracking-tighter relative z-10 tabular-nums">{totalKcal}</p>
-                <p className="text-[8px] font-bold text-brand-green relative z-10 uppercase">KCAL BURNT</p>
-                <div className="absolute top-0 right-0 w-24 h-24 bg-brand-green/5 rounded-full blur-3xl pointer-events-none" />
-             </Card>
-             <Card className="p-8 border-none bg-zinc-900 text-center space-y-2 group overflow-hidden relative">
-                <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest relative z-10">Tonnage Shifted</p>
-                <p className="text-5xl font-black text-white tracking-tighter relative z-10 tabular-nums">{totalVolume.toLocaleString()}</p>
-                <p className="text-[8px] font-bold text-zinc-500 relative z-10 uppercase">KG VOLUME</p>
-                <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-3xl pointer-events-none" />
-             </Card>
-          </div>
-
-          {sessionPRs.length > 0 && (
-            <Card className="p-8 border-brand-gold/30 bg-brand-gold/5 flex items-center gap-6 animate-pulse">
-               <Award className="w-10 h-10 text-brand-gold" />
-               <div>
-                  <h4 className="text-brand-gold font-black uppercase italic text-lg tracking-tight">Records Broken ({sessionPRs.length})</h4>
-                  <p className="text-[10px] font-bold text-brand-gold/60 uppercase">{sessionPRs.join(', ')}</p>
-               </div>
-            </Card>
-          )}
-
-          <section className="space-y-6">
-             <h3 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] ml-2">Morphology Impact</h3>
-             <Card className="p-8 border-zinc-800 bg-zinc-900/50">
-                <div className="grid grid-cols-3 gap-y-10 gap-x-4">
-                   {MUSCLE_GROUPS.map(muscle => {
-                     const worked = activeSession.some(ex => ex.muscle === muscle);
-                     return (
-                       <div key={muscle} className="flex flex-col items-center gap-3">
-                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all ${worked ? 'bg-brand-red border-brand-red shadow-[0_0_20px_rgba(225,29,72,0.4)] scale-110' : 'bg-zinc-800 border-zinc-700 opacity-30'}`}>
-                             <Target className={`w-6 h-6 ${worked ? 'text-white' : 'text-zinc-500'}`} />
-                          </div>
-                          <span className={`text-[9px] font-black uppercase tracking-widest ${worked ? 'text-white' : 'text-zinc-700'}`}>{muscle}</span>
-                       </div>
-                     );
-                   })}
-                </div>
-             </Card>
-          </section>
-
-          <Button fullWidth onClick={() => navigate('/')} className="h-20 rounded-[40px] bg-zinc-100 text-zinc-950 text-base font-black uppercase tracking-[0.3em] shadow-3xl group">
-             Synchronize & Return Home
-             <ArrowRight className="group-hover:translate-x-2 transition-transform" />
+          <h2 className="text-5xl font-black italic uppercase text-white">Execution Verified</h2>
+          <Button fullWidth onClick={() => navigate('/')} className="h-20 rounded-[40px] bg-zinc-100 text-black font-black uppercase tracking-[0.3em]">
+             Synch & Exit
           </Button>
         </div>
       )}
 
-      <div className="pt-20 text-center opacity-10 border-t border-zinc-900">
-        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[1em]">
-          ADAPT OR EXPIRE
-        </p>
-      </div>
     </div>
   );
 };

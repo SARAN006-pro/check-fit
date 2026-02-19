@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Header from '../components/layout/Header';
 import Card from '../components/ui/Card';
 import { fitnessApi } from '../api/axios';
+import { motion } from 'framer-motion';
 import { 
   BarChart, 
   Bar, 
@@ -20,7 +21,6 @@ import {
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
-  Cell,
   ComposedChart
 } from 'recharts';
 import { 
@@ -32,20 +32,17 @@ import {
   ArrowUpRight, 
   ShieldCheck,
   Flame,
-  Moon,
-  Heart,
   Brain,
   Download,
   Filter,
-  Info,
   Sparkles,
   CalendarDays,
-  ChevronRight,
   Medal,
-  History,
   Timer
 } from 'lucide-react';
-import { PersonalRecord, VolumeData, WorkloadMetrics } from '../types';
+import { PersonalRecord } from '../types';
+
+const MotionDiv = motion.div as any;
 
 const Analytics: React.FC = () => {
   const [analyticsData, setAnalyticsData] = useState<any | null>(null);
@@ -85,11 +82,10 @@ const Analytics: React.FC = () => {
   if (loading || !analyticsData) {
     return (
       <div className="p-6 max-w-6xl mx-auto space-y-12 animate-pulse">
-        <div className="h-12 w-64 bg-zinc-100 rounded-2xl" />
+        <div className="h-12 w-64 bg-zinc-900 rounded-2xl" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-zinc-100 rounded-3xl" />)}
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-40 bg-zinc-900 rounded-[32px]" />)}
         </div>
-        <div className="h-96 bg-zinc-100 rounded-[40px]" />
       </div>
     );
   }
@@ -99,12 +95,12 @@ const Analytics: React.FC = () => {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-zinc-900 text-white p-4 rounded-[20px] shadow-2xl border border-white/10 space-y-1">
+        <div className="bg-zinc-950 text-white p-4 rounded-[20px] shadow-3xl border border-white/10 space-y-1 backdrop-blur-xl">
           <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{label}</p>
           {payload.map((p: any, i: number) => (
             <div key={i} className="flex justify-between gap-10 items-center">
               <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-tight">{p.name}:</span>
-              <span className="text-sm font-black text-white">
+              <span className="text-sm font-black text-white" style={{ color: p.color }}>
                 {p.value?.toLocaleString()} {p.name.includes('Intensity') ? '%' : 'kg'}
               </span>
             </div>
@@ -117,193 +113,184 @@ const Analytics: React.FC = () => {
 
   const getHeatmapColor = (value: number) => {
     switch (value) {
-      case 0: return 'bg-zinc-100 hover:bg-zinc-200';
-      case 1: return 'bg-blue-100 hover:bg-blue-200';
-      case 2: return 'bg-blue-300 hover:bg-blue-400';
-      case 3: return 'bg-blue-500 hover:bg-blue-600';
-      case 4: return 'bg-zinc-900 hover:bg-black shadow-[0_0_10px_rgba(0,0,0,0.1)]';
-      default: return 'bg-zinc-100';
+      case 0: return 'bg-zinc-900/50 hover:bg-zinc-800';
+      case 1: return 'bg-blue-900/40 hover:bg-blue-800/60';
+      case 2: return 'bg-blue-700/60 hover:bg-blue-600/80';
+      case 3: return 'bg-blue-500 hover:bg-blue-400 shadow-[0_0_15px_#3b82f644]';
+      case 4: return 'bg-brand-red hover:bg-red-400 shadow-[0_0_20px_#e11d4866]';
+      default: return 'bg-zinc-900';
     }
   };
 
-  const getMonthLabel = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleString('default', { month: 'short' });
-  };
-
   return (
-    <div className="p-6 pb-32 max-w-6xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <Header 
-          title="Performance Terminal" 
-          subtitle="Advanced biomechanical analysis and longitudinal output mapping." 
-        />
+    <div className="p-6 pb-32 max-w-7xl mx-auto space-y-12 animate-in fade-in duration-1000">
+      {/* 1. TERMINAL HEADER */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-white/5 pb-10">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+             <div className="w-3 h-3 bg-brand-red rounded-full animate-pulse shadow-[0_0_10px_#e11d48]" />
+             <h1 className="text-4xl font-black tracking-tighter text-white uppercase italic">Performance Terminal</h1>
+          </div>
+          <p className="text-sm font-bold text-zinc-500 uppercase tracking-[0.4em] max-w-xl">
+            Neural node 0x7F active. Advanced biomechanical analysis engine running.
+          </p>
+        </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-zinc-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-all shadow-sm">
-            <Filter className="w-4 h-4" /> Config
+          <button className="flex items-center gap-2 px-6 py-3 bg-zinc-900 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white hover:border-white/20 transition-all shadow-xl active:scale-95">
+            <Filter className="w-4 h-4" /> CONFIG
           </button>
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-xl">
-            <Download className="w-4 h-4" /> Export Report
+          <button className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-all shadow-[0_20px_40px_-10px_rgba(255,255,255,0.2)] active:scale-95">
+            <Download className="w-4 h-4" /> EXPORT REPORT
           </button>
         </div>
       </div>
 
-      {/* KPI Section */}
+      {/* 2. KPI MATRIX (Visibility Overhaul) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-8 border-none bg-zinc-900 text-white overflow-hidden relative shadow-premium group">
+        {/* READINESS */}
+        <Card className="p-8 border-none bg-zinc-900/40 overflow-hidden relative shadow-3xl group">
           <div className="relative z-10 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-blue-400" />
+                <ShieldCheck className="w-5 h-5 text-brand-green" />
                 <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Readiness</p>
               </div>
-              <Sparkles className="w-4 h-4 text-orange-400 animate-pulse" />
+              <Sparkles className="w-4 h-4 text-brand-gold animate-pulse" />
             </div>
             <div>
-              <h3 className="text-4xl font-black tracking-tighter">{workload.status}</h3>
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">Ready for Optimal Loading</p>
+              <h3 className="text-5xl font-black tracking-tighter text-white uppercase italic drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">{workload.status}</h3>
+              <p className="text-[10px] font-bold text-brand-green uppercase tracking-widest mt-2 bg-brand-green/10 inline-block px-2 py-0.5 rounded">Optimal Loading Enabled</p>
             </div>
           </div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-[80px] -mr-16 -mt-16" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-brand-green/5 rounded-full blur-[80px] -mr-16 -mt-16" />
         </Card>
 
-        <Card className="p-8 border-none bg-white shadow-premium flex flex-col justify-between">
-          <div className="space-y-4">
+        {/* RECOVERY */}
+        <Card className="p-8 border-none bg-zinc-900/40 shadow-3xl flex flex-col justify-between group overflow-hidden">
+          <div className="space-y-4 relative z-10">
             <div className="flex items-center gap-2">
-              <Activity className="w-5 h-5 text-zinc-900" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Recovery Index</p>
+              <Brain className="w-5 h-5 text-blue-400" />
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Recovery Index</p>
             </div>
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-4xl font-black tracking-tight text-zinc-900">{workload.recoveryScore}</h3>
-              <span className="text-[11px] font-black text-green-500 uppercase tracking-widest">+4.2%</span>
+            <div className="flex items-baseline gap-3">
+              <h3 className="text-6xl font-black tracking-tighter text-white tabular-nums drop-shadow-[0_0_20px_rgba(59,130,246,0.2)]">{workload.recoveryScore}</h3>
+              <div className="flex items-center bg-brand-green/10 px-2 py-1 rounded-lg">
+                <TrendingUp className="w-3 h-3 text-brand-green mr-1" />
+                <span className="text-[11px] font-black text-brand-green uppercase tracking-widest">+4.2%</span>
+              </div>
             </div>
           </div>
-          <div className="mt-6 h-1 w-full bg-zinc-50 rounded-full overflow-hidden">
-            <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${workload.recoveryScore}%` }} />
+          <div className="mt-8 flex gap-1 relative z-10">
+             {Array.from({ length: 20 }).map((_, i) => (
+               <div 
+                 key={i} 
+                 className={`h-2 flex-1 rounded-full ${i < (workload.recoveryScore / 5) ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-zinc-800'}`} 
+               />
+             ))}
           </div>
+          <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl" />
         </Card>
 
-        <Card className="p-8 border-none bg-white shadow-premium flex flex-col justify-between">
+        {/* STRENGTH */}
+        <Card className="p-8 border-none bg-zinc-900/40 shadow-3xl flex flex-col justify-between group">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Dumbbell className="w-5 h-5 text-zinc-900" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Strength Gain</p>
+              <Dumbbell className="w-5 h-5 text-orange-500" />
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Strength Gain</p>
             </div>
             <div className="flex items-baseline gap-2">
-              <h3 className="text-4xl font-black tracking-tight text-zinc-900">+12%</h3>
-              <span className="text-[11px] font-black text-blue-500 uppercase tracking-widest">30D Matrix</span>
+              <h3 className="text-6xl font-black tracking-tighter text-white tabular-nums drop-shadow-[0_0_20px_rgba(234,88,12,0.2)]">+12%</h3>
+              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">30D MATRIX</span>
             </div>
           </div>
-          <div className="mt-6 flex gap-1 items-end h-6">
-            {[30, 50, 45, 90, 60, 80, 75].map((h, i) => (
-              <div key={i} className="flex-1 bg-zinc-100 rounded-sm" style={{ height: `${h}%` }} />
+          <div className="mt-8 flex gap-1.5 items-end h-8">
+            {[30, 60, 45, 90, 60, 80, 75, 95, 85, 100].map((h, i) => (
+              <div 
+                key={i} 
+                className="flex-1 bg-gradient-to-t from-orange-600/40 to-orange-400 rounded-t-sm transition-all duration-1000" 
+                style={{ height: `${h}%` }} 
+              />
             ))}
           </div>
         </Card>
 
-        <Card className="p-8 border-none bg-white shadow-premium flex flex-col justify-between">
-          <div className="space-y-4">
+        {/* INTENSITY */}
+        <Card className="p-8 border-none bg-zinc-900/40 shadow-3xl flex flex-col justify-between group overflow-hidden">
+          <div className="space-y-4 relative z-10">
             <div className="flex items-center gap-2">
-              <Flame className="w-5 h-5 text-orange-500" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Total Intensity</p>
+              <Flame className="w-5 h-5 text-brand-red" />
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Total Intensity</p>
             </div>
             <div className="flex items-baseline gap-2">
-              <h3 className="text-4xl font-black tracking-tight text-zinc-900">88%</h3>
-              <span className="text-[11px] font-black text-zinc-300 uppercase tracking-widest">Target Met</span>
+              <h3 className="text-6xl font-black tracking-tighter text-white tabular-nums drop-shadow-[0_0_20px_rgba(225,29,72,0.2)]">88%</h3>
+              <span className="text-[10px] font-black text-brand-red animate-pulse uppercase tracking-[0.2em]">ZONE 4 ACTIVE</span>
             </div>
           </div>
-          <div className="mt-6 h-1 w-full bg-zinc-50 rounded-full overflow-hidden">
-            <div className="h-full bg-orange-500 transition-all duration-1000" style={{ width: '88%' }} />
+          <div className="mt-8 h-2.5 w-full bg-zinc-950 rounded-full overflow-hidden border border-white/5 relative z-10">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: '88%' }}
+              transition={{ duration: 2 }}
+              className="h-full bg-gradient-to-r from-brand-red to-orange-500 shadow-[0_0_15px_#e11d48]" 
+            />
           </div>
+          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-brand-red/5 rounded-full blur-3xl" />
         </Card>
       </div>
 
-      {/* PR Vault Section (Phase 3 Feature) */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-3">
-             <Medal className="w-6 h-6 text-yellow-500" />
-             <h2 className="text-xl font-black text-zinc-900 tracking-tight">PR Vault</h2>
-          </div>
-          <button className="text-[10px] font-black text-blue-600 uppercase tracking-widest">View Historical Progression</button>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {prs.map((pr: PersonalRecord) => (
-            <Card key={pr.id} className="p-6 border-zinc-100 hover:border-zinc-900 group transition-all relative overflow-hidden">
-              <div className="relative z-10 space-y-4">
-                <div className="flex justify-between items-center">
-                  <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
-                    {pr.icon}
-                  </div>
-                  {pr.previousValue && (
-                    <div className="flex items-center gap-1 text-green-600">
-                      <ArrowUpRight className="w-3 h-3" strokeWidth={3} />
-                      <span className="text-[10px] font-black">+{Math.round(((pr.value - pr.previousValue) / pr.previousValue) * 100)}%</span>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">{pr.exercise}</p>
-                  <h4 className="text-2xl font-black text-zinc-900 tracking-tight">{pr.value} <span className="text-xs text-zinc-400">{pr.unit}</span></h4>
-                </div>
-                <div className="pt-2 flex items-center gap-2 text-[9px] font-bold text-zinc-300 uppercase">
-                  <CalendarDays className="w-3 h-3" /> {new Date(pr.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                </div>
-              </div>
-              <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-zinc-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* Longitudinal Performance Chart */}
-      <section className="space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-1">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-zinc-900 text-white rounded-2xl flex items-center justify-center">
-              <TrendingUp className="w-5 h-5" />
+      {/* 3. PERFORMANCE CORRELATION (Visual Polish) */}
+      <section className="space-y-8 pt-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 px-1">
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 bg-white/5 border border-white/10 text-white rounded-[24px] flex items-center justify-center shadow-2xl backdrop-blur-md">
+              <TrendingUp className="w-7 h-7" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-zinc-900 tracking-tight">Performance Correlation</h2>
-              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Load Stress vs Biological Recovery</p>
+              <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Correlation Matrix</h2>
+              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.4em]">Volume Load [kg] vs Recovery Potential [index]</p>
             </div>
           </div>
-          <div className="flex gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-zinc-900" />
-              <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Volume Load</span>
+          <div className="flex gap-8 bg-zinc-900/50 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <div className="w-4 h-1.5 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Volume Load</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500" />
-              <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Recovery Index</span>
+            <div className="flex items-center gap-3">
+              <div className="w-4 h-1.5 rounded-full bg-blue-500 shadow-[0_0_10px_#3b82f6]" />
+              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Recovery Index</span>
             </div>
           </div>
         </div>
         
-        <Card className="p-10 h-[450px] border-none shadow-premium bg-white overflow-hidden relative">
+        <Card className="p-10 h-[500px] border border-white/5 shadow-premium bg-zinc-900/20 overflow-hidden relative backdrop-blur-sm">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={volumeTrend} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <defs>
+                <linearGradient id="volGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ffffff" stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor="#ffffff" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
               <XAxis 
                 dataKey="period" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: '#a1a1aa', fontSize: 10, fontWeight: 800 }} 
+                tick={{ fill: '#71717a', fontSize: 10, fontWeight: 800 }} 
                 dy={15}
               />
               <YAxis yAxisId="left" hide />
               <YAxis yAxisId="right" hide orientation="right" />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.05)', strokeWidth: 2 }} />
               <Area 
                 yAxisId="left"
                 type="monotone" 
                 dataKey="volume" 
                 name="Volume Load"
-                stroke="#18181b" 
-                strokeWidth={5} 
-                fillOpacity={0.05} 
-                fill="#18181b"
+                stroke="#ffffff" 
+                strokeWidth={4} 
+                fillOpacity={1} 
+                fill="url(#volGrad)"
                 animationDuration={2500}
               />
               <Line 
@@ -312,193 +299,129 @@ const Analytics: React.FC = () => {
                 dataKey="recovery" 
                 name="Recovery Score"
                 stroke="#3b82f6" 
-                strokeWidth={4} 
-                dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
+                strokeWidth={5} 
+                dot={{ r: 6, fill: '#3b82f6', strokeWidth: 3, stroke: '#000' }}
                 animationDuration={3000}
               />
             </ComposedChart>
           </ResponsiveContainer>
+          <div className="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.01)_3px)] opacity-50" />
         </Card>
       </section>
 
-      {/* Strength Growth & Fatigue Distribution (Two Columns) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="p-10 border-none shadow-premium bg-white overflow-hidden flex flex-col">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
-            <div className="space-y-1">
-              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Iterative Strength Curve</p>
-              <h3 className="text-2xl font-black tracking-tight">{selectedLift} Logic</h3>
-            </div>
-            <div className="flex bg-zinc-50 p-1.5 rounded-2xl gap-1">
-              {Object.keys(strengthCurve).map(lift => (
-                <button
-                  key={lift}
-                  onClick={() => setSelectedLift(lift)}
-                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                    selectedLift === lift ? 'bg-zinc-900 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-600'
-                  }`}
-                >
-                  {lift.split(' ')[1] || lift}
-                </button>
-              ))}
-            </div>
+      {/* 4. PR VAULT (Phase 3 Feature) */}
+      <section className="space-y-8">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-4">
+             <div className="w-12 h-12 bg-brand-gold/10 rounded-2xl flex items-center justify-center border border-brand-gold/20 shadow-2xl shadow-brand-gold/5">
+                <Medal className="w-6 h-6 text-brand-gold" />
+             </div>
+             <div>
+                <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">PR Vault</h2>
+                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.4em]">Verified absolute power peaks</p>
+             </div>
           </div>
+          <button className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-500/10 px-4 py-2 rounded-full border border-blue-500/20 hover:bg-blue-500/20 transition-all">Historical Progression Matrix</button>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {prs.map((pr: any, i: number) => (
+            <Card key={pr.id} className="p-8 bg-zinc-900/60 border border-white/5 hover:border-brand-gold/40 group transition-all relative overflow-hidden">
+              <div className="relative z-10 space-y-6">
+                <div className="flex justify-between items-center">
+                  <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 group-hover:rotate-6 transition-all border border-white/5">
+                    {pr.icon}
+                  </div>
+                  {pr.previousValue && (
+                    <div className="flex items-center gap-1.5 bg-brand-green/10 px-3 py-1 rounded-full border border-brand-green/20">
+                      <TrendingUp className="w-3.5 h-3.5 text-brand-green" />
+                      <span className="text-[11px] font-black text-brand-green">+{Math.round(((pr.value - pr.previousValue) / pr.previousValue) * 100)}%</span>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-1">{pr.exercise}</p>
+                  <div className="flex items-baseline gap-2">
+                     <h4 className="text-4xl font-black text-white tabular-nums tracking-tighter">{pr.value}</h4>
+                     <span className="text-sm font-bold text-zinc-600 uppercase">{pr.unit}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-black text-zinc-700 uppercase tracking-widest">
+                  <CalendarDays className="w-3 h-3" /> VERIFIED: {new Date(pr.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                </div>
+              </div>
+              <div className="absolute top-0 right-0 w-24 h-24 bg-brand-gold/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            </Card>
+          ))}
+        </div>
+      </section>
 
-          <div className="flex-1 h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={strengthCurve[selectedLift]}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="date" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#71717a', fontSize: 10, fontWeight: 800 }} 
-                />
-                <YAxis hide domain={['dataMin - 10', 'dataMax + 10']} />
-                <Tooltip 
-                   contentStyle={{ backgroundColor: '#18181b', borderRadius: '16px', border: 'none', color: '#fff' }}
-                   itemStyle={{ fontSize: '10px', fontWeight: 'bold' }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="actual" 
-                  name="Verified Load"
-                  stroke="#18181b" 
-                  strokeWidth={4} 
-                  dot={{ r: 6, fill: '#18181b', strokeWidth: 3, stroke: '#fff' }}
-                  animationDuration={2000}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="projected" 
-                  name="AI Projected 1RM"
-                  stroke="#3b82f6" 
-                  strokeDasharray="5 5" 
-                  strokeWidth={2} 
-                  dot={false}
-                  animationDuration={3000}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          
-          <div className="mt-8 pt-8 border-t border-zinc-50 flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-green-50 text-green-600 rounded-xl flex items-center justify-center">
-                <Target className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Protocol Delta</p>
-                <p className="text-sm font-black text-zinc-900">+12.5 kg Verified Increase</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                <Brain className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">AI Projection</p>
-                <p className="text-sm font-black text-zinc-900">Optimal Load: {strengthCurve[selectedLift].slice(-1)[0].projected}kg</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <section className="space-y-6">
-          <div className="flex items-center gap-3 px-1">
-            <div className="w-10 h-10 bg-zinc-900 text-white rounded-2xl flex items-center justify-center shadow-lg">
-              <Target className="w-5 h-5" />
+      {/* 5. CONSISTENCY HEATMAP (High Polish) */}
+      <section className="space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 px-1">
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 bg-white/5 border border-white/10 text-white rounded-[24px] flex items-center justify-center shadow-2xl backdrop-blur-md">
+              <CalendarDays className="w-7 h-7" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-zinc-900 tracking-tight">Fatigue Biometrics</h2>
-              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Volume distribution per vector</p>
+              <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Consistency Matrix</h2>
+              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.4em]">90-Day operational readiness heat feed</p>
             </div>
           </div>
-          <Card className="p-10 border-none shadow-premium bg-white h-full min-h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={muscleDistribution}>
-                <PolarGrid stroke="#f1f5f9" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} />
-                <PolarRadiusAxis angle={30} domain={[0, 150]} hide />
-                <Radar
-                  name="Verified Load"
-                  dataKey="A"
-                  stroke="#18181b"
-                  fill="#18181b"
-                  fillOpacity={0.6}
-                  animationDuration={1500}
-                />
-                <Radar
-                  name="Protocol Target"
-                  dataKey="B"
-                  stroke="#3b82f6"
-                  fill="#3b82f6"
-                  fillOpacity={0.2}
-                  animationDuration={2000}
-                />
-                <Tooltip contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #f1f5f9', fontSize: '10px' }} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </Card>
-        </section>
-      </div>
-
-      {/* Consistency Matrix Heatmap */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2">
-            <CalendarDays className="w-5 h-5 text-zinc-900" />
-            <h2 className="text-xl font-black text-zinc-900 tracking-tight">Consistency Matrix</h2>
-          </div>
-          <div className="flex items-center gap-2">
-             <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Low</span>
-             <div className="flex gap-1">
+          <div className="flex items-center gap-6 bg-zinc-900/50 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+             <span className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.4em]">Intensity Gradient:</span>
+             <div className="flex gap-2">
                 {[0, 1, 2, 3, 4].map(v => (
-                  <div key={v} className={`w-3 h-3 rounded-sm ${getHeatmapColor(v)}`} />
+                  <div key={v} className={`w-3.5 h-3.5 rounded-sm ${getHeatmapColor(v)}`} />
                 ))}
              </div>
-             <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">High</span>
+             <span className="text-[10px] font-black text-white uppercase tracking-widest ml-2">HI-CAPACITY</span>
           </div>
         </div>
 
-        <Card className="p-8 border-none shadow-premium bg-white overflow-hidden">
-          <div className="flex gap-4">
-            <div className="flex flex-col justify-between pt-6 pb-2 pr-2 text-[8px] font-black text-zinc-300 uppercase leading-none">
+        <Card className="p-10 border border-white/5 bg-zinc-900/40 overflow-hidden shadow-3xl">
+          <div className="flex gap-8">
+            <div className="flex flex-col justify-between pt-10 pb-4 text-[9px] font-black text-zinc-600 uppercase leading-none tracking-widest">
               <span>Mon</span>
               <span>Wed</span>
               <span>Fri</span>
               <span>Sun</span>
             </div>
             <div className="flex-1 overflow-x-auto no-scrollbar">
-              <div className="flex mb-3 h-3 relative">
+              <div className="flex gap-1.5 pb-2">
                 {heatmapWeeks.map((week, weekIdx) => {
                   const firstDay = week[0];
                   const isNewMonth = weekIdx === 0 || (new Date(firstDay.date).getDate() <= 7);
-                  if (!isNewMonth) return <div key={weekIdx} className="w-3.5 shrink-0" />;
                   return (
-                    <div key={weekIdx} className="w-3.5 shrink-0">
-                      <span className="absolute text-[9px] font-black text-zinc-400 uppercase tracking-widest whitespace-nowrap">
-                        {getMonthLabel(firstDay.date)}
-                      </span>
+                    <div key={weekIdx} className="w-4 shrink-0 h-4 flex items-center">
+                      {isNewMonth && (
+                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest whitespace-nowrap">
+                          {new Date(firstDay.date).toLocaleString('default', { month: 'short' }).toUpperCase()}
+                        </span>
+                      )}
                     </div>
                   );
                 })}
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-1.5">
                 {heatmapWeeks.map((week, weekIdx) => (
-                  <div key={weekIdx} className="flex flex-col gap-1 shrink-0">
+                  <div key={weekIdx} className="flex flex-col gap-1.5 shrink-0">
                     {week.map((day, dayIdx) => (
-                      <div 
+                      <MotionDiv 
                         key={dayIdx} 
-                        className={`w-3.5 h-3.5 rounded-[3px] transition-all cursor-crosshair group relative ${getHeatmapColor(day.value)}`}
+                        whileHover={{ scale: 1.4, zIndex: 50 }}
+                        className={`w-4 h-4 rounded-[4px] transition-all cursor-crosshair group relative ${getHeatmapColor(day.value)} border border-black/20`}
                       >
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 hidden group-hover:block z-50 animate-in fade-in zoom-in duration-200 pointer-events-none">
-                           <div className="bg-zinc-900 text-white p-2 rounded-xl shadow-2xl border border-white/10 text-center">
-                              <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">{new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                              <p className="text-[10px] font-bold mt-0.5">{day.kcal} kcal Protocol</p>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-40 hidden group-hover:block z-50 animate-in fade-in zoom-in duration-200 pointer-events-none">
+                           <div className="bg-zinc-950 text-white p-3 rounded-[16px] shadow-3xl border border-white/10 text-center backdrop-blur-xl">
+                              <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">{new Date(day.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                              <div className="flex items-center justify-center gap-2">
+                                <Zap className="w-3 h-3 text-brand-red fill-brand-red" />
+                                <p className="text-sm font-black italic">{day.kcal} KCAL BURNED</p>
+                              </div>
                            </div>
                         </div>
-                      </div>
+                      </MotionDiv>
                     ))}
                   </div>
                 ))}
@@ -508,10 +431,10 @@ const Analytics: React.FC = () => {
         </Card>
       </section>
 
-      <div className="pt-12 text-center border-t border-zinc-100">
-        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.4em] leading-relaxed max-w-lg mx-auto">
-          PERFORMANCE DATA AGGREGATED VIA ZENFIT NEURAL ARCHITECTURE VERSION 4.2. <br />
-          ALL ANALYTICS ARE SUBJECT TO PROTOCOL INTEGRITY CHECKS.
+      <div className="pt-24 text-center border-t border-white/5 opacity-40">
+        <p className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.8em] leading-relaxed max-w-2xl mx-auto">
+          ZENFIT PERFORMANCE DATA ENCRYPTED VIA END-TO-END NEURAL TUNNELING.<br />
+          NODE AUTHENTICATED • SYSTEM VERSION 4.2.0 STABLE
         </p>
       </div>
     </div>

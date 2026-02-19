@@ -42,21 +42,20 @@ const Dashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="p-6 max-w-2xl mx-auto flex flex-col items-center justify-center h-screen animate-pulse">
-        <div className="w-64 h-64 border-[16px] border-zinc-900 rounded-full mb-12" />
-        <div className="w-full h-24 bg-zinc-900 rounded-[32px] mb-6" />
+        <div className="w-64 h-64 border-[16px] border-zinc-100 dark:border-zinc-900 rounded-full mb-12" />
+        <div className="w-full h-24 bg-zinc-100 dark:bg-zinc-900 rounded-[32px] mb-6" />
         <div className="grid grid-cols-2 gap-4 w-full">
-           <div className="h-32 bg-zinc-900 rounded-[32px]" />
-           <div className="h-32 bg-zinc-900 rounded-[32px]" />
+           <div className="h-32 bg-zinc-100 dark:bg-zinc-900 rounded-[32px]" />
+           <div className="h-32 bg-zinc-100 dark:bg-zinc-900 rounded-[32px]" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6 pb-32 max-w-2xl mx-auto space-y-12 animate-in fade-in duration-1000">
-      <Header title="Performance Core" subtitle="Live Biometric Feed" />
+    <div className="min-h-screen bg-transparent p-6 pb-32 max-w-2xl mx-auto space-y-12 animate-in fade-in duration-1000">
+      <Header title="iCtrl Performance Core" subtitle="Live Biometric Feed" />
 
-      {/* 1. HERO PROGRESS ZONE */}
       <section className="relative">
         <ProgressRing 
           percentage={88} 
@@ -66,33 +65,27 @@ const Dashboard: React.FC = () => {
         />
       </section>
 
-      {/* 6. DAILY COACH MESSAGE */}
       <CoachMessage />
 
-      {/* 2. NEXT ACTION CTA */}
       <section className="sticky top-4 z-30 shadow-2xl">
         <DailyCTA status="workout" />
       </section>
 
-      {/* 3. SOCIAL DOPAMINE */}
       <MiniLeaderboard friends={[...mockFriends]} />
 
-      {/* 4. PROGRESS VISUALIZATION */}
       <section className="space-y-4">
         <div className="flex items-center gap-2 px-2">
-          <Sparkles className="w-4 h-4 text-blue-400" />
-          <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">Performance Drift</h3>
+          <Sparkles className="w-4 h-4 text-purple-400" />
+          <h3 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Operational Drift</h3>
         </div>
         <WeeklyStats />
       </section>
 
-      {/* 5. ACHIEVEMENTS STRIP */}
       <Achievements />
 
-      {/* System Footer */}
-      <div className="pt-12 text-center border-t border-white/5 opacity-30">
-        <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.6em]">
-          ZENFIT PERFORMANCE OS • v4.2.0 STABLE
+      <div className="pt-12 text-center border-t border-zinc-200 dark:border-white/5 opacity-30">
+        <p className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.6em]">
+          iCTRL BIOMETRIC OS • v4.2.0 STABLE
         </p>
       </div>
     </div>
